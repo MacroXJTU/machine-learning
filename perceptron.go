@@ -57,18 +57,18 @@ func (p *Perceptron) Predict(d []float64) int {
 	return -1
 }
 
-func CreateEm(samples [][]float64, labels []int, maxIteration int, learningRate float64) *Perceptron {
+func CreatePerceptron(samples [][]float64, labels []int, maxIteration int, learningRate float64) *Perceptron {
 	if len(samples) != len(labels) || len(samples) <= 0 {
 		return nil
 	}
 	return (&Perceptron{maxIteration: maxIteration, dim: len(samples[0]), learningRate: learningRate}).Train(samples, labels)
 }
 
-func TestEm() {
-	fmt.Println("--------- EM Test---------------------")
+func TestPerceptron() {
+	fmt.Println("--------- Perceptron Test---------------------")
 	set := [][]float64{{3, 3}, {4, 3}, {1, 1}}
 	labels := []int{1, 1, -1}
-	p := CreateEm(set, labels, 10000, 0.001)
+	p := CreatePerceptron(set, labels, 10000, 0.001)
 	for i := 0; i < len(set); i++ {
 		fmt.Printf("(%f,%f) predict result=%d, expect %d\n", set[i][0], set[i][1], p.Predict(set[i]), labels[i])
 	}

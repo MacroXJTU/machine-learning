@@ -141,5 +141,5 @@ func TestKdTree() {
 	destination := []int{3, 5, 1}
 	kdTree := BuildKdTree(trainSet, 0, nil)
 	p, d := kdTree.FindNearestPointAndDistance(destination)
-	fmt.Printf("(3,5,1) nearest neighbor is (%d,%d,%d) with distance=%f.", p.Data[0], p.Data[1], p.Data[2], d)
+	fmt.Printf("(3,5,1) nearest neighbor is (%d,%d,%d) with distance=%f.\n", p.Data[0], p.Data[1], p.Data[2], d)
 }
