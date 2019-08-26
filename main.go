@@ -5,4 +5,5 @@ func main() {
 	TestKdTree()
 	TestBayes()
 	TestID3()
+	TestC45()
 }
