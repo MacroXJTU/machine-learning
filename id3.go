@@ -138,7 +138,6 @@ func BuildID3Tree(samples []*Sample, dims hashset.Set, parent *TreeNode, dimValu
 			maxGainDim = v.(int)
 		}
 	}
-	//这里考虑添加maxGain的阈值检查，如果小于阈值，作为一个叶子节点添加
 
 	//按照maxGainDim将集合切分成若干个子集合
 	sampleArrays := SplitSamples(samples, maxGainDim)
@@ -147,7 +146,7 @@ func BuildID3Tree(samples []*Sample, dims hashset.Set, parent *TreeNode, dimValu
 	node := &TreeNode{
 		Dim:      maxGainDim, //本节点使用的分类特征
 		DimValue: dimValue,   //本次分类的特征值
-		Label:    0,          //本节点对应的标签,非叶子节点的Label没有意义
+		Label:    maxClass,          //本节点对应的标签,树剪枝的时候用上，直接把子节点清空就行
 		Parent:   parent,     //父节点
 		Children: nil} //子节点
 	//迭代建立

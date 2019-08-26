@@ -64,7 +64,7 @@ func BuildC45Tree(samples []*Sample, dims hashset.Set, parent *TreeNode, dimValu
 	node := &TreeNode{
 		Dim:      maxGainDim, //本节点使用的分类特征
 		DimValue: dimValue,   //本次分类的特征值
-		Label:    0,          //本节点对应的标签,非叶子节点的Label没有意义
+		Label:    maxClass,          //本节点对应的标签,在树剪枝的时候可以用上
 		Parent:   parent,     //父节点
 		Children: nil} //子节点
 	//迭代建立
