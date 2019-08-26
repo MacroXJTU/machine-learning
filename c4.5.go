@@ -54,6 +54,8 @@ func BuildC45Tree(samples []*Sample, dims hashset.Set, parent *TreeNode, dimValu
 			maxGainDim = v.(int)
 		}
 	}
+	//这里考虑添加maxGain的阈值检查，如果小于阈值，作为一个叶子节点添加
+
 	fmt.Printf("use %d dim as seprate.\n", maxGainDim)
 	//按照maxGainDim将集合切分成若干个子集合
 	sampleArrays := SplitSamples(samples, maxGainDim)
