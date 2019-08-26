@@ -4,4 +4,5 @@ func main() {
 	TestPerceptron()
 	TestKdTree()
 	TestBayes()
+	TestID3()
 }
