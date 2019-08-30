@@ -30,9 +30,9 @@ type MaxEntropy struct {
 	Pxy     map[int]float32    //y出现的频率
 	EPxyf   map[int]float32    //特征函数关于经验分布的期望值
 	EPxf    map[int]float32    //特征函数关于模型和X经验分布的期望值
-	N       int                //样本容量的大小
+	N       float32            //样本容量的大小的倒数
 	n       int                //（x,y）的对数 pair，不是log
-	M       float32            //类似于学习率的倒数
+	M       float32            //类似于学习率
 	cvt     map[string]int     //（x,y）对和index之间的转换
 }
 
@@ -112,9 +112,16 @@ func (m *MaxEntropy) makeIndex() *MaxEntropy {
 	return m
 }
 
+var convert = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+
 //下标转换
 func (m *MaxEntropy) xy2id(x string, y int) int {
-	return m.cvt[fmt.Sprintf("%s:%d", x, y)]
+	//这个调用次数非常多，想办法加速
+	//return m.cvt[fmt.Sprintf("%s:%d", x, y)]
+	//每个loop调用的时间，由140秒左右降低到30秒左右
+	return m.cvt[x+convert[y]] //相比fmt.Sprintf()的方式，速度提升80%以上
+	//字符串拼接看是否有更快的方式
+
 }
 
 func (m *MaxEntropy) id2xy(id int) (string, int) {
@@ -146,7 +153,7 @@ func (m *MaxEntropy) calcEpxyf() *MaxEntropy {
 		m.EPxyf = make(map[int]float32, m.n)
 	}
 	for i := 0; i < m.n; i++ {
-		m.EPxyf[i] = (m.Pxy[i]) / float32(m.N)
+		m.EPxyf[i] = (m.Pxy[i]) * m.N
 	}
 	return m
 }
@@ -171,7 +178,7 @@ func (m *MaxEntropy) calcEpxf() *MaxEntropy {
 			for _, x := range sample.Features {
 				for _, pyx := range pyxes {
 					if m.fxy(x, pyx.y) {
-						m.EPxf[m.xy2id(x, pyx.y)] += pyx.p * (1.0 / float32(m.N))
+						m.EPxf[m.xy2id(x, pyx.y)] += pyx.p * m.N
 					}
 				}
 			}
@@ -197,35 +204,63 @@ type TPxy struct {
 }
 
 //计算(x,y)出现的概率，预测的过程就是找(x,y)最大的那个y
-func (m *MaxEntropy) calcProb(features []string) []*TPxy {
+func (m *MaxEntropy) calcProb(features []string) []TPxy {
 
 	p := make([]float32, 10)
+	totalP := float32(0.0) //做分母的概率总和
 	for y := 0; y <= 9; y++ {
 		//这里是写死的代码，因为我们已经知道标签是0到9
 		p[y] = m.pxy(features, y).p
-
+		totalP += p[y]
 	}
+	/* 去掉一次没必要的循环
 	totalP := float32(0.0) //做分母的概率总和
 	for _, v := range p {
 		totalP += v
-	}
+	}*/
+
 	//计算这个feature对应的每个y的概率并且返回
-	var r []*TPxy
+	r := make([]TPxy, 10)
 	for i := 0; i <= 9; i++ {
-		r = append(r, &TPxy{p: p[i] / totalP, y: i})
+		//r[i]= &TPxy{p: p[i] / totalP, y: i}//去掉appened方式的函数调用
+		r[i].y, r[i].p = i, p[i]/totalP //去掉重复生成元素
 	}
 	return r
 }
 
 //计算针对特定维度特征计算(x,y)概率
 func (m *MaxEntropy) pxy(features []string, y int) *TPxy {
-	r := float32(0.0)
+	//r := float32(0.0)
+	//调用频率太高，考虑继续分拆加速
+	f:=func(features []string,y int) float32{
+		ret:=float32(0.0)
+		for _, x := range features {
+			if m.fxy(x, y) {
+				ret += m.w[m.xy2id(x, y)]
+			}
+		}
+		return ret
+	}
+	var ret1,ret2 float32
+	var l sync.WaitGroup
+	l.Add(2)
+	go func(){
+		defer l.Done()
+		ret1=f(features[:len(features)/2],y)
+	}()
+	go func(){
+		defer l.Done()
+		ret2=f(features[:len(features)/2],y)
+	}()
+	/*
 	for _, x := range features {
 		if m.fxy(x, y) {
 			r += m.w[m.xy2id(x, y)]
 		}
 	}
-	return &TPxy{float32(math.Exp(float64(r))), y}
+	*/
+	//考虑exp函数是否可以加速
+	return &TPxy{float32(math.Exp(float64(ret1+ret2))), y}
 }
 
 //模型训练
@@ -240,7 +275,8 @@ func (m *MaxEntropy) train(maxIteration int) *MaxEntropy {
 	m.calcPxyPx()
 
 	//设置变量值
-	m.N, m.n, m.M = len(m.samples), len(m.Pxy), 50000.0
+	//m.N用到的都是除法，弄成倒数，换成乘法
+	m.N, m.n, m.M = 1.0/float32(len(m.samples)), len(m.Pxy), 1.0/50000.0
 	//计算EPxyf
 	m.calcEpxyf()
 	//迭代优化w
@@ -253,7 +289,8 @@ func (m *MaxEntropy) train(maxIteration int) *MaxEntropy {
 		//耗掉了大部分时间，是优化的主要位置
 		m.calcEpxf()
 		for i := 0; i < m.n; i++ {
-			m.w[i] += float32(1.0) / m.M * float32(math.Log(float64(m.EPxyf[i]/m.EPxf[i])))
+			//m.w[i] += float32(1.0) / m.M * float32(math.Log(float64(m.EPxyf[i]/m.EPxf[i])))
+			m.w[i] += m.M * float32(math.Log(float64(m.EPxyf[i]/m.EPxf[i]))) //去掉一次除法运算
 		}
 		fmt.Printf("%d loop, last loop cost %d s.\n", iter+1, time.Now().Unix()-startTs)
 		startTs = time.Now().Unix()
