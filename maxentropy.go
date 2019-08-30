@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,7 @@ type MnistSample struct {
 }
 
 type MaxEntropy struct {
+	sync.Mutex
 	samples []*MnistSample //样本集合
 	test    []*MnistSample
 	w       map[int]float32    //最大熵模型的系数
@@ -90,7 +92,7 @@ func CreateMaxEntropyModel() *MaxEntropy {
 	d := loadData()
 	Shuffle(d) //读取和打乱输入的样本数据
 
-	return (&MaxEntropy{samples: d[:len(d)-5000], test: d[len(d)-5000:]}).makeIndex().train(100)
+	return (&MaxEntropy{samples: d[:len(d)-10000], test: d[len(d)-10000:]}).makeIndex().train(100)
 
 }
 
@@ -154,20 +156,29 @@ func (m *MaxEntropy) calcEpxf() *MaxEntropy {
 	if m.EPxf == nil {
 		m.EPxf = make(map[int]float32, m.n)
 	}
+	//这里是重新分配一段存储更快，还是逐个清除，待比较
+	//不过不要太沉迷微观上的优化
 	for k, _ := range m.EPxf {
 		m.EPxf[k] = 0.0
 	}
+	var wg sync.WaitGroup
 	for _, sample := range m.samples {
-		pyxes := m.calcProb(sample.Features)
-
-		for _, x := range sample.Features {
-			for _, pyx := range pyxes {
-				if m.fxy(x, pyx.y) {
-					m.EPxf[m.xy2id(x, pyx.y)] += pyx.p * (1.0 / float32(m.N))
+		wg.Add(1)
+		go func(sample *MnistSample) {
+			defer wg.Done()
+			pyxes := m.calcProb(sample.Features)
+			m.Lock()
+			for _, x := range sample.Features {
+				for _, pyx := range pyxes {
+					if m.fxy(x, pyx.y) {
+						m.EPxf[m.xy2id(x, pyx.y)] += pyx.p * (1.0 / float32(m.N))
+					}
 				}
 			}
-		}
+			m.Unlock()
+		}(sample)
 	}
+	wg.Wait()
 	return m
 }
 
@@ -239,6 +250,7 @@ func (m *MaxEntropy) train(maxIteration int) *MaxEntropy {
 	for iter := 0; iter < maxIteration; iter++ {
 
 		//计算特征函数关于分布的期望
+		//耗掉了大部分时间，是优化的主要位置
 		m.calcEpxf()
 		for i := 0; i < m.n; i++ {
 			m.w[i] += float32(1.0) / m.M * float32(math.Log(float64(m.EPxyf[i]/m.EPxf[i])))
