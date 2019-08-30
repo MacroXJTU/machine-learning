@@ -34,6 +34,7 @@ type MaxEntropy struct {
 	n       int                //（x,y）的对数 pair，不是log
 	M       float32            //类似于学习率
 	cvt     map[string]int     //（x,y）对和index之间的转换
+	fxyv    map[string]float32 //fxy的函数值
 }
 
 //从文件中加载数据
@@ -91,13 +92,18 @@ func loadData() []*MnistSample {
 func CreateMaxEntropyModel() *MaxEntropy {
 	d := loadData()
 	Shuffle(d) //读取和打乱输入的样本数据
-
-	return (&MaxEntropy{samples: d[:len(d)-10000], test: d[len(d)-10000:]}).makeIndex().train(100)
-
+	return (&MaxEntropy{samples: d[:len(d)-10000], test: d[len(d)-10000:]}).makeIndex().train(10)
 }
 
 //创建坐标转换数据
 func (m *MaxEntropy) makeIndex() *MaxEntropy {
+	m.fxyv = make(map[string]float32, 10*len(m.samples[0].Features)*2)
+	for i := 0; i <= 9; i++ {
+		for j := 0; j < len(m.samples[0].Features); j++ {
+			m.fxyv[fmt.Sprintf("%d_%d:%d", j, 0, i)] = 0.0
+			m.fxyv[fmt.Sprintf("%d_%d:%d", j, 1, i)] = 0.0
+		}
+	}
 	id := 0
 	m.cvt = make(map[string]int)
 	for _, v := range m.samples {
@@ -111,6 +117,8 @@ func (m *MaxEntropy) makeIndex() *MaxEntropy {
 			if _, ok := m.cvt[dimValue+convert[v.Label]]; !ok {
 				m.cvt[dimValue+convert[v.Label]] = id
 				id++
+				//这个用于实现fxy函数，就是判断(x,y)对是否存在
+				m.fxyv[dimValue+convert[v.Label]] = 1.0
 			}
 		}
 	}
@@ -124,10 +132,9 @@ var convert = []string{":0", ":1", ":2", ":3", ":4", ":5", ":6", ":7", ":8", ":9
 func (m *MaxEntropy) xy2id(x string, y int) int {
 	//这个调用次数非常多，想办法加速
 	//return m.cvt[fmt.Sprintf("%s:%d", x, y)]
-	//每个loop调用的时间，由140秒左右降低到30秒左右
-	return m.cvt[x+convert[y]] //相比fmt.Sprintf()的方式，速度提升80%以上
+	//每个loop调用的时间，由140秒左右降低到50秒左右
+	return m.cvt[x+convert[y]] //相比fmt.Sprintf()的方式，速度提升60%以上
 	//字符串拼接看是否有更快的方式
-
 }
 
 func (m *MaxEntropy) id2xy(id int) (string, int) {
@@ -183,9 +190,9 @@ func (m *MaxEntropy) calcEpxf() *MaxEntropy {
 			m.Lock()
 			for _, x := range sample.Features {
 				for _, pyx := range pyxes {
-					if m.fxy(x, pyx.y) {
-						m.EPxf[m.xy2id(x, pyx.y)] += pyx.p * m.N
-					}
+					//if m.fxy(x, pyx.y) {
+					m.EPxf[m.xy2id(x, pyx.y)] += pyx.p * m.N * m.fxy(x, pyx.y)
+					//}
 				}
 			}
 			m.Unlock()
@@ -196,12 +203,15 @@ func (m *MaxEntropy) calcEpxf() *MaxEntropy {
 }
 
 //指定的f(x,y)函数计算过程,就是(x,y)有没有出现过
-func (m *MaxEntropy) fxy(x string, y int) bool {
-	_, ok := m.EPxyf[m.xy2id(x, y)]
-	if !ok {
-		fmt.Println(ok)
-	}
-	return ok
+func (m *MaxEntropy) fxy(x string, y int) float32 {
+	return m.fxyv[x+convert[y]]
+	/*
+		v, _ := m.EPxyf[m.xy2id(x, y)]
+		if v != 0.0 {
+			return 1.0
+		}
+		return 0.0
+	*/
 }
 
 type TPxy struct {
@@ -228,7 +238,7 @@ func (m *MaxEntropy) calcProb(features []string) []*TPxy {
 	//计算这个feature对应的每个y的概率并且返回
 	r := make([]*TPxy, 10)
 	for i := 0; i <= 9; i++ {
-		r[i]= &TPxy{p: p[i] / totalP, y: i}//去掉appened方式的函数调用
+		r[i] = &TPxy{p: p[i] / totalP, y: i} //去掉appened方式的函数调用
 	}
 	return r
 }
@@ -238,9 +248,10 @@ func (m *MaxEntropy) pxy(features []string, y int) *TPxy {
 	r := float32(0.0)
 	//调用频率太高，考虑继续分拆加速
 	for _, x := range features {
-		if m.fxy(x, y) {
-			r += m.w[m.xy2id(x, y)]
-		}
+		//if m.fxy(x, y) {
+		r += m.w[m.xy2id(x, y)] * m.fxy(x, y)
+		//}
+		//if 分支转成乘法
 	}
 	//考虑exp函数是否可以加速
 	return &TPxy{float32(math.Exp(float64(r))), y}
@@ -303,7 +314,7 @@ func TestMaxEntropy() {
 	acc := 0
 	for _, v := range m.test {
 		p := m.Predict(v.Features)
-		fmt.Printf("predict:%d, ground=%d \n", p, v.Label)
+		//fmt.Printf("predict:%d, ground=%d \n", p, v.Label)
 		if p == v.Label {
 			acc += 1
 		}
