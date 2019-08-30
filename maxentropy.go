@@ -90,7 +90,7 @@ func CreateMaxEntropyModel() *MaxEntropy {
 	d := loadData()
 	Shuffle(d) //读取和打乱输入的样本数据
 
-	return (&MaxEntropy{samples: d[:len(d)-5000], test: d[len(d)-5000:]}).makeIndex().train(1000)
+	return (&MaxEntropy{samples: d[:len(d)-5000], test: d[len(d)-5000:]}).makeIndex().train(100)
 
 }
 
@@ -235,15 +235,16 @@ func (m *MaxEntropy) train(maxIteration int) *MaxEntropy {
 	//迭代优化w
 	//分配和初始化全0的系数
 	m.w = make(map[int]float32, m.n) //其他系数在(x,y)不存在时f(x,y)=0，所以没有必要存在
-	startTs := time.Now().Nanosecond() / 1000/1000
+	startTs := time.Now().Unix()
 	for iter := 0; iter < maxIteration; iter++ {
-		fmt.Printf("%d loop, last loop cost %d ms.\n", iter, time.Now().Nanosecond()/1000/1000-startTs)
-		startTs = time.Now().Nanosecond() / 1000/1000
+
 		//计算特征函数关于分布的期望
 		m.calcEpxf()
 		for i := 0; i < m.n; i++ {
 			m.w[i] += float32(1.0) / m.M * float32(math.Log(float64(m.EPxyf[i]/m.EPxf[i])))
 		}
+		fmt.Printf("%d loop, last loop cost %d ms.\n", iter+1, time.Now().Unix()-startTs)
+		startTs = time.Now().Unix()
 
 	}
 	return m
