@@ -2,16 +2,16 @@
 使用golang 实现。
 
 # 感知器
-[图片]
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/perceptron.png)
 
 # kNN
-[图片]
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/knn.png)
 
 # 贝叶斯
 ![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/bayes.png)
 
 # 决策树ID3
-[图片]
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/id3.png)
 
 # 决策树C4.5
-[图片]
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/c45.png)
