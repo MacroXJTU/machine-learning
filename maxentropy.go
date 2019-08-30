@@ -210,7 +210,7 @@ type TPxy struct {
 }
 
 //计算(x,y)出现的概率，预测的过程就是找(x,y)最大的那个y
-func (m *MaxEntropy) calcProb(features []string) []TPxy {
+func (m *MaxEntropy) calcProb(features []string) []*TPxy {
 
 	p := make([]float32, 10)
 	totalP := float32(0.0) //做分母的概率总和
@@ -226,10 +226,9 @@ func (m *MaxEntropy) calcProb(features []string) []TPxy {
 	}*/
 
 	//计算这个feature对应的每个y的概率并且返回
-	r := make([]TPxy, 10)
+	r := make([]*TPxy, 10)
 	for i := 0; i <= 9; i++ {
-		//r[i]= &TPxy{p: p[i] / totalP, y: i}//去掉appened方式的函数调用
-		r[i].y, r[i].p = i, p[i]/totalP //去掉重复生成元素
+		r[i]= &TPxy{p: p[i] / totalP, y: i}//去掉appened方式的函数调用
 	}
 	return r
 }
