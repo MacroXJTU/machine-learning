@@ -243,7 +243,7 @@ func (m *MaxEntropy) train(maxIteration int) *MaxEntropy {
 		for i := 0; i < m.n; i++ {
 			m.w[i] += float32(1.0) / m.M * float32(math.Log(float64(m.EPxyf[i]/m.EPxf[i])))
 		}
-		fmt.Printf("%d loop, last loop cost %d ms.\n", iter+1, time.Now().Unix()-startTs)
+		fmt.Printf("%d loop, last loop cost %d s.\n", iter+1, time.Now().Unix()-startTs)
 		startTs = time.Now().Unix()
 
 	}
