@@ -85,10 +85,13 @@ func loadData() []*MnistSample {
 }
 
 //创建模型
+//训练费时间，注意改训练次数
 func CreateMaxEntropyModel() *MaxEntropy {
 	d := loadData()
 	Shuffle(d) //读取和打乱输入的样本数据
+
 	return (&MaxEntropy{samples: d[:len(d)-5000], test: d[len(d)-5000:]}).makeIndex().train(1000)
+
 }
 
 //创建坐标转换数据
@@ -262,6 +265,7 @@ func (m *MaxEntropy) Predict(feature []string) int {
 
 //最大熵模型的测试
 func TestMaxEntropy() {
+	fmt.Println("----------Test max entropy-------------------")
 	m := CreateMaxEntropyModel()
 	acc := 0
 	for _, v := range m.test {
