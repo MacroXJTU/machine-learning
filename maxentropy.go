@@ -102,8 +102,14 @@ func (m *MaxEntropy) makeIndex() *MaxEntropy {
 	m.cvt = make(map[string]int)
 	for _, v := range m.samples {
 		for _, dimValue := range v.Features {
-			if _, ok := m.cvt[fmt.Sprintf("%s:%d", dimValue, v.Label)]; !ok {
-				m.cvt[fmt.Sprintf("%s:%d", dimValue, v.Label)] = id
+			/*
+				if _, ok := m.cvt[fmt.Sprintf("%s:%d", dimValue, v.Label)]; !ok {
+					m.cvt[fmt.Sprintf("%s:%d", dimValue, v.Label)] = id
+					id++
+				}
+			*/
+			if _, ok := m.cvt[dimValue+convert[v.Label]]; !ok {
+				m.cvt[dimValue+convert[v.Label]] = id
 				id++
 			}
 		}
@@ -112,7 +118,7 @@ func (m *MaxEntropy) makeIndex() *MaxEntropy {
 	return m
 }
 
-var convert = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+var convert = []string{":0", ":1", ":2", ":3", ":4", ":5", ":6", ":7", ":8", ":9"}
 
 //下标转换
 func (m *MaxEntropy) xy2id(x string, y int) int {
@@ -232,8 +238,8 @@ func (m *MaxEntropy) calcProb(features []string) []TPxy {
 func (m *MaxEntropy) pxy(features []string, y int) *TPxy {
 	//r := float32(0.0)
 	//调用频率太高，考虑继续分拆加速
-	f:=func(features []string,y int) float32{
-		ret:=float32(0.0)
+	f := func(features []string, y int) float32 {
+		ret := float32(0.0)
 		for _, x := range features {
 			if m.fxy(x, y) {
 				ret += m.w[m.xy2id(x, y)]
@@ -241,26 +247,26 @@ func (m *MaxEntropy) pxy(features []string, y int) *TPxy {
 		}
 		return ret
 	}
-	var ret1,ret2 float32
+	var ret1, ret2 float32
 	var l sync.WaitGroup
 	l.Add(2)
-	go func(){
+	go func() {
 		defer l.Done()
-		ret1=f(features[:len(features)/2],y)
+		ret1 = f(features[:len(features)/2], y)
 	}()
-	go func(){
+	go func() {
 		defer l.Done()
-		ret2=f(features[:len(features)/2],y)
+		ret2 = f(features[:len(features)/2], y)
 	}()
 	/*
-	for _, x := range features {
-		if m.fxy(x, y) {
-			r += m.w[m.xy2id(x, y)]
+		for _, x := range features {
+			if m.fxy(x, y) {
+				r += m.w[m.xy2id(x, y)]
+			}
 		}
-	}
 	*/
 	//考虑exp函数是否可以加速
-	return &TPxy{float32(math.Exp(float64(ret1+ret2))), y}
+	return &TPxy{float32(math.Exp(float64(ret1 + ret2))), y}
 }
 
 //模型训练
