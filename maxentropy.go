@@ -236,37 +236,15 @@ func (m *MaxEntropy) calcProb(features []string) []TPxy {
 
 //计算针对特定维度特征计算(x,y)概率
 func (m *MaxEntropy) pxy(features []string, y int) *TPxy {
-	//r := float32(0.0)
+	r := float32(0.0)
 	//调用频率太高，考虑继续分拆加速
-	f := func(features []string, y int) float32 {
-		ret := float32(0.0)
-		for _, x := range features {
-			if m.fxy(x, y) {
-				ret += m.w[m.xy2id(x, y)]
-			}
+	for _, x := range features {
+		if m.fxy(x, y) {
+			r += m.w[m.xy2id(x, y)]
 		}
-		return ret
 	}
-	var ret1, ret2 float32
-	var l sync.WaitGroup
-	l.Add(2)
-	go func() {
-		defer l.Done()
-		ret1 = f(features[:len(features)/2], y)
-	}()
-	go func() {
-		defer l.Done()
-		ret2 = f(features[:len(features)/2], y)
-	}()
-	/*
-		for _, x := range features {
-			if m.fxy(x, y) {
-				r += m.w[m.xy2id(x, y)]
-			}
-		}
-	*/
 	//考虑exp函数是否可以加速
-	return &TPxy{float32(math.Exp(float64(ret1 + ret2))), y}
+	return &TPxy{float32(math.Exp(float64(r))), y}
 }
 
 //模型训练
