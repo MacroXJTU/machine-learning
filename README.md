@@ -8,7 +8,7 @@
 [图片]
 
 # 贝叶斯
-[图片]
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/bayes.png)
 
 # 决策树ID3
 [图片]
