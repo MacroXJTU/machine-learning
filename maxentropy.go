@@ -92,7 +92,7 @@ func loadData() []*MnistSample {
 func CreateMaxEntropyModel() *MaxEntropy {
 	d := loadData()
 	Shuffle(d) //读取和打乱输入的样本数据
-	return (&MaxEntropy{samples: d[:len(d)-10000], test: d[len(d)-10000:]}).makeIndex().train(10)
+	return (&MaxEntropy{samples: d[:len(d)-10000], test: d[len(d)-10000:]}).makeIndex().train(1000)
 }
 
 //创建坐标转换数据
