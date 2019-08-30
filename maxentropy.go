@@ -132,7 +132,7 @@ var convert = []string{":0", ":1", ":2", ":3", ":4", ":5", ":6", ":7", ":8", ":9
 func (m *MaxEntropy) xy2id(x string, y int) int {
 	//这个调用次数非常多，想办法加速
 	//return m.cvt[fmt.Sprintf("%s:%d", x, y)]
-	//每个loop调用的时间，由140秒左右降低到50秒左右
+	//每个loop调用的时间，由140秒左右降低到40秒左右
 	return m.cvt[x+convert[y]] //相比fmt.Sprintf()的方式，速度提升60%以上
 	//字符串拼接看是否有更快的方式
 }
