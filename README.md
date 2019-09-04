@@ -15,3 +15,6 @@
 
 # 决策树C4.5
 ![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/c45.png)
+
+# 最大熵
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/maxentropy.png)
