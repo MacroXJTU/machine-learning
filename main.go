@@ -7,4 +7,5 @@ func main() {
 	TestID3()
 	TestC45()
 	TestMaxEntropy()
+	TestSVM()
 }
