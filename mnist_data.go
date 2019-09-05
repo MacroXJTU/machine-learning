@@ -10,8 +10,9 @@ import (
 )
 
 type MnistSample struct {
-	Label    int
-	Features []string
+	Label       int
+	Features    []string
+	FeaturesInt []int
 }
 
 //从文件中加载数据
@@ -55,6 +56,7 @@ func loadData() []*MnistSample {
 		//对特征进行处理，不同维度的0和1是不一样的
 		for index := 0; index < len(sample.Features); index++ {
 			sample.Features[index] = fmt.Sprintf("%d_%d", index, arc[1+index])
+			sample.FeaturesInt[index] = arc[1+index]
 		}
 		samples = append(samples, sample)
 
@@ -63,4 +65,3 @@ func loadData() []*MnistSample {
 	return samples
 
 }
-
