@@ -51,8 +51,9 @@ func loadData() []*MnistSample {
 		}
 		label, _ := strconv.Atoi(ar[0])
 		sample := &MnistSample{
-			Label:    label,
-			Features: make([]string, len(arc[1:]))}
+			Label:       label,
+			Features:    make([]string, len(arc[1:])),
+			FeaturesInt: make([]int, len(arc[1:]))}
 		//对特征进行处理，不同维度的0和1是不一样的
 		for index := 0; index < len(sample.Features); index++ {
 			sample.Features[index] = fmt.Sprintf("%d_%d", index, arc[1+index])
