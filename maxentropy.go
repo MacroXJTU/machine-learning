@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,10 +13,7 @@ import (
 
 //使用mnist数据集
 
-type MnistSample struct {
-	Label    int
-	Features []string
-}
+
 
 type MaxEntropy struct {
 	sync.Mutex
@@ -37,55 +31,6 @@ type MaxEntropy struct {
 	fxyv    map[string]float64 //fxy的函数值
 }
 
-//从文件中加载数据
-func loadData() []*MnistSample {
-	//存储样本集
-	var samples []*MnistSample
-	//从文件中读取所有样本数据
-	fi, err := os.Open("./train.csv")
-	if err != nil {
-		panic(fmt.Sprintf("read data failed:%v.\n", err))
-	}
-	defer fi.Close()
-
-	//这个的按照行读取数据有一个大坑，有缓冲区长度限制，默认4096，需要调整
-	//br := bufio.NewReader(fi)
-	br := bufio.NewReaderSize(fi, 4096*10)
-
-	//忽略第一行
-	_, _, _ = br.ReadLine()
-
-	for {
-		a, _, c := br.ReadLine()
-		if c == io.EOF {
-			break
-		}
-		ar := strings.Split(string(a), ",")
-		arc := make([]int, len(ar))
-		for k, v := range ar[1:] {
-			arc[k+1], _ = strconv.Atoi(v)
-			//图片二值化
-			if arc[k+1] >= 128 {
-				arc[k+1] = 1
-			} else {
-				arc[k+1] = 0
-			}
-		}
-		label, _ := strconv.Atoi(ar[0])
-		sample := &MnistSample{
-			Label:    label,
-			Features: make([]string, len(arc[1:]))}
-		//对特征进行处理，不同维度的0和1是不一样的
-		for index := 0; index < len(sample.Features); index++ {
-			sample.Features[index] = fmt.Sprintf("%d_%d", index, arc[1+index])
-		}
-		samples = append(samples, sample)
-
-	}
-
-	return samples
-
-}
 
 //创建模型
 //训练费时间，注意改训练次数
@@ -289,7 +234,7 @@ func (m *MaxEntropy) train(maxIteration int) *MaxEntropy {
 		fmt.Printf("%d loop, last loop cost %d s.\n", iter+1, time.Now().Unix()-startTs)
 		startTs = time.Now().Unix()
 		//每10次迭代测试一次
-		if iter%10 == 0.0 {
+		if iter%10 == 0 {
 			m.Test()
 		}
 	}
@@ -327,5 +272,5 @@ func (m *MaxEntropy) Test() {
 func TestMaxEntropy() {
 	fmt.Println("----------Test max entropy-------------------")
 	m := CreateMaxEntropyModel()
-	m.train(2000)
+	m.train(1)
 }
