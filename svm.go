@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"sync"
+	"sync/atomic"
 )
 
 type svmModel struct {
@@ -76,23 +77,29 @@ func (m *svmModel) Train() *svmModel {
 
 func (m *svmModel) Test() *svmModel {
 	data := make(map[int]float64, len(m.test[0].FeaturesInt))
-	acc := 0
+	var acc int32
+	var wg sync.WaitGroup
 	for _, v := range m.test {
-		var total float64
-		for _, val := range v.FeaturesInt {
-			total += float64(val * val)
-		}
-		l2 := math.Sqrt(total)
-		for key, val := range v.FeaturesInt {
-			data[key] = float64(val) / l2
-		}
-		p := m.model.Predict(data)
-		if math.Abs(p-float64(v.Label)) < 0.1 {
-			acc += 1
-		} else {
-			fmt.Printf("ERROR:predict as %f, except %d\n", m.model.Predict(data), v.Label)
-		}
+		wg.Add(1)
+		go func(v *MnistSample) {
+			defer wg.Done()
+			var total float64
+			for _, val := range v.FeaturesInt {
+				total += float64(val * val)
+			}
+			l2 := math.Sqrt(total)
+			for key, val := range v.FeaturesInt {
+				data[key] = float64(val) / l2
+			}
+			p := m.model.Predict(data)
+			if math.Abs(p-float64(v.Label)) < 0.1 {
+				atomic.AddInt32(&acc,1)
+			} else {
+				fmt.Printf("ERROR:predict as %f, except %d\n", m.model.Predict(data), v.Label)
+			}
+		}(v)
 	}
+	wg.Wait()
 	fmt.Printf("Accuracy=%f\n", float64(acc)/float64(len(m.test)))
 	return m
 }
