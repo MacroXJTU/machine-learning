@@ -93,10 +93,9 @@ func (m *svmModel) Test() *svmModel {
 			}
 			p := m.model.Predict(data)
 			if math.Abs(p-float64(v.Label)) < 0.1 {
-				atomic.AddInt32(&acc,1)
-			} else {
-				fmt.Printf("ERROR:predict as %f, except %d\n", m.model.Predict(data), v.Label)
+				atomic.AddInt32(&acc, 1)
 			}
+			fmt.Printf("INFO:predict as %f, except %d\n", m.model.Predict(data), v.Label)
 		}(v)
 	}
 	wg.Wait()
