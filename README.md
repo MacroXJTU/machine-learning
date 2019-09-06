@@ -24,3 +24,6 @@ make
 # 最大熵
 ![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/maxentropy2.png)
 ![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/maxentropy.png)
+
+# 支持向量机
+![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/svm.png)
