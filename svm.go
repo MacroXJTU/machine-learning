@@ -76,7 +76,6 @@ func (m *svmModel) Train() *svmModel {
 }
 
 func (m *svmModel) Test() *svmModel {
-	data := make(map[int]float64, len(m.test[0].FeaturesInt))
 	var acc int32
 	var wg sync.WaitGroup
 	for _, v := range m.test {
@@ -84,6 +83,7 @@ func (m *svmModel) Test() *svmModel {
 		go func(v *MnistSample) {
 			defer wg.Done()
 			var total float64
+			data := make(map[int]float64, len(m.test[0].FeaturesInt))
 			for _, val := range v.FeaturesInt {
 				total += float64(val * val)
 			}
