@@ -32,6 +32,8 @@ func CreateSvmModel() *svmModel {
 func (m *svmModel) Train() *svmModel {
 	m.file = fmt.Sprintf("train_svm.csv")
 	//首先判断train_svm.csv开头的文件是否存在,存在的话就继续使用
+	//这会导致部分训练集的数据出现在测试集中
+	//但是先不纠结这些细节，为加速计算
 	if _, err := os.Stat(m.file); err != nil && !os.IsExist(err) {
 		//输入文件转成libsvm支持的格式
 		f, err := os.OpenFile(m.file, os.O_RDWR|os.O_CREATE, 0755)
