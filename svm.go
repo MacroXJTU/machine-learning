@@ -66,8 +66,8 @@ func (m *svmModel) Train() *svmModel {
 	m.param = libSvm.NewParameter()
 	//m.param.KernelType = libSvm.POLY //多项式核
 	//m.param.SvmType=libSvm.NU_SVC
-	m.param.Eps = 1.0e-6 //设置结束条件的精度要求
-	m.param.C=20.0
+	m.param.Eps = 1.0e-7 //设置结束条件的精度要求
+	m.param.C=50.0
 	m.model = libSvm.NewModel(m.param)
 	problem, err := libSvm.NewProblem(m.file, m.param)
 	if err != nil {
