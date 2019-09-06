@@ -1,6 +1,10 @@
 # 统计学习方法
 使用golang 实现。
 
+# 运行方法
+git clone https://github.com/MacroXJTU/machine-learning
+make
+
 # 感知器
 ![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/perceptron.png)
 
