@@ -25,7 +25,7 @@ func CreateSvmModel() *svmModel {
 	//因为libsvm库使用指定个数输入数据的方式，所以读出的所有数据全部用作测试数据
 	fmt.Printf("load data done, %d total items, %d for train and %d for test.\n", len(d), len(d)-10000, 100000)
 
-	return (&svmModel{samples: d[:len(d)-10000], test: d[len(d)-10000:]}).Train()
+	return (&svmModel{samples: d[:len(d)-10000], test: d[len(d)-10000:]})
 }
 
 func (m *svmModel) Train() *svmModel {
