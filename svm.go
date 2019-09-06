@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"sync"
-	"time"
 )
 
 type svmModel struct {
@@ -30,33 +29,35 @@ func CreateSvmModel() *svmModel {
 }
 
 func (m *svmModel) Train() *svmModel {
-	m.file = fmt.Sprintf("train_svm_%d.csv", time.Now().Unix())
-	//输入文件转成libsvm支持的格式
-	f, err := os.OpenFile(m.file, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, v := range m.samples {
-		var buffer bytes.Buffer
-		buffer.WriteString(fmt.Sprintf("%d", v.Label))
-		var total float64
-		for _, fv := range v.FeaturesInt {
-			total += float64(fv * fv)
+	m.file = fmt.Sprintf("train_svm.csv")
+	//首先判断train_svm.csv开头的文件是否存在,存在的话就继续使用
+	if _, err := os.Stat(m.file); err != nil && !os.IsExist(err) {
+		//输入文件转成libsvm支持的格式
+		f, err := os.OpenFile(m.file, os.O_RDWR|os.O_CREATE, 0755)
+		if err != nil {
+			panic(err)
 		}
-		l2 := math.Sqrt(total)
-		for index, fv := range v.FeaturesInt {
-			if fv == 0 {
-				continue
+
+		for _, v := range m.samples {
+			var buffer bytes.Buffer
+			buffer.WriteString(fmt.Sprintf("%d", v.Label))
+			var total float64
+			for _, fv := range v.FeaturesInt {
+				total += float64(fv * fv)
 			}
-			buffer.WriteString(fmt.Sprintf(" %d:%f", index+1, float64(fv)/l2))
+			l2 := math.Sqrt(total)
+			for index, fv := range v.FeaturesInt {
+				if fv == 0 {
+					continue
+				}
+				buffer.WriteString(fmt.Sprintf(" %d:%f", index+1, float64(fv)/l2))
+			}
+
+			buffer.WriteString("\n")
+			_, _ = f.WriteString(buffer.String())
 		}
-
-		buffer.WriteString("\n")
-		_, _ = f.WriteString(buffer.String())
+		_ = f.Close()
 	}
-	_ = f.Close()
-
 	//转换完成，开始训练
 	fmt.Println("start training svm model")
 	m.param = libSvm.NewParameter()
