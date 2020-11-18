@@ -27,3 +27,5 @@ make
 
 # 支持向量机
 ![image](https://raw.githubusercontent.com/MacroXJTU/machine-learning/master/pics/svm.png)
+
+更多内容，查看https://www.macroxjtu.com
